@@ -5,8 +5,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,9 +14,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @ToString
-@Builder
 public class Postazione {
 	@Id
 	@GeneratedValue
@@ -28,5 +24,13 @@ public class Postazione {
 	private TipoPostazione tipoPostazione;
 	private int numeroOccupantiMax;
 	private String citta;
+
+	public Postazione(String descrizione, TipoPostazione tipoPostazione, int numeroOccupantiMax, String citta) {
+		super();
+		this.descrizione = descrizione;
+		this.tipoPostazione = tipoPostazione;
+		this.numeroOccupantiMax = numeroOccupantiMax;
+		this.citta = citta;
+	}
 
 }

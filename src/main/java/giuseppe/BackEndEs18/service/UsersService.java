@@ -1,68 +1,55 @@
 package giuseppe.BackEndEs18.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Optional;
-import java.util.Random;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import giuseppe.BackEndEs18.Exception.BadRequestException;
+import giuseppe.BackEndEs18.Exception.NotFoundException;
 import giuseppe.BackEndEs18.entities.User;
+import giuseppe.BackEndEs18.entities.UserRequestPayload;
+import giuseppe.BackEndEs18.repository.UserRepository;
 
 @Service
 public class UsersService {
+	private final UserRepository usersRepo;
 
-	private List<User> users = new ArrayList<>();
-
-	public User save(User user) {
-		Random rndm = new Random();
-		user.setId(rndm.nextInt());
-		this.users.add(user);
-		return user;
+	@Autowired
+	public UsersService(UserRepository userRep) {
+		this.usersRepo = userRep;
 	}
 
-	public List<User> getUsers() {
-		return this.users;
+	public User create(UserRequestPayload body) {
+		usersRepo.findByEmail(body.getEmail()).ifPresent(user -> {
+			throw new BadRequestException("L'email è già stata utilizzata");
+		});
+		User newUser = new User(body.getUsername(), body.getNomeCompleto(), body.getEmail());
+		return usersRepo.save(newUser);
 	}
 
-	public Optional<User> findById(int id) {
-		User u = null;
-
-		for (User user : users) {
-			if (user.getId() == id)
-				u = user;
-		}
-
-		return Optional.ofNullable(u);
+	public Page<User> find(int page, int size, String sort) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+		return usersRepo.findAll(pageable);
 	}
 
-	public void findByIdAndDelete(int id) {
-		ListIterator<User> iterator = this.users.listIterator();
-
-		while (iterator.hasNext()) {
-			User currentUser = iterator.next();
-			if (currentUser.getId() == id) {
-				iterator.remove();
-			}
-		}
+	public User findById(int id) throws NotFoundException {
+		return usersRepo.findById(id).orElseThrow(() -> new NotFoundException(id));
 	}
 
-	public Optional<User> findByIdAndUpdate(int id, User user) {
-		User found = null;
+	public User findByIdAndUpdate(int id, UserRequestPayload body) throws NotFoundException {
+		User found = this.findById(id);
+		found.setEmail(body.getEmail());
+		found.setNomeCompleto(body.getNomeCompleto());
+		found.setUsername(body.getUsername());
 
-		for (User currentUser : users) {
-			if (currentUser.getId() == id) {
-				found = currentUser;
-				found.setUsername(user.getUsername());
-				;
-				found.setNomeCompleto(user.getNomeCompleto());
-				found.setEmail(user.getEmail());
-				found.setId(id);
-			}
-		}
-		return Optional.ofNullable(found);
-
+		return usersRepo.save(found);
 	}
 
+	public void findByIdAndDelete(int id) throws NotFoundException {
+		User found = this.findById(id);
+		usersRepo.delete(found);
+	}
 }
